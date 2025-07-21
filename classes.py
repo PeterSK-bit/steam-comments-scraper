@@ -22,13 +22,16 @@ class Comment:
         return f"At {datetime.fromtimestamp(self._timestamp)} user named {self._author_name} commented: {self._text}"
     
     #getters
-    def get_author_name(self) -> str:
+    @property
+    def author_name(self) -> str:
         return self._author_name
     
-    def get_timestamp(self) -> int:
+    @property
+    def timestamp(self) -> int:
         return self._timestamp
     
-    def get_text(self) -> str:
+    @property
+    def text(self) -> str:
         return self._text
 
 class User:
@@ -48,22 +51,25 @@ class User:
         return True
 
     #getters
-    def get_username(self) -> str:
+    @property
+    def username(self) -> str:
         return self._username
 
-    def get_account_comments(self) -> list[Comment]:
+    @property
+    def account_comments(self) -> list[Comment]:
         return self._account_comments
     
-    def get_comments_status(self) -> CommentStatus:
-        return self.comments_status.value
+    @property
+    def comments_status(self) -> CommentStatus:
+        return self._comments_status.value
     
     #string outputs
     def __str__(self) -> str:
         count = len(self._account_comments)
         comment_word = "comment" if count == 1 else "comments"
         
-        if self.comments_status is not CommentStatus.UNKNOWN:
-            return f"{self._username} has {count} {comment_word} on their profile and has commenting {self.comments_status.value}."
+        if self._comments_status is not CommentStatus.UNKNOWN:
+            return f"{self._username} has {count} {comment_word} on their profile and has commenting {self._comments_status.value}."
         else:
             return f"{self._username} has {count} {comment_word} on their profile."
     
