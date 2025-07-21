@@ -35,7 +35,7 @@ class Comment:
         return self._text
 
 class User:
-    def __init__(self, username:str, account_comments:list[Comment], comments_status: CommentStatus):
+    def __init__(self, username:str, account_comments:list[Comment], comments_status: CommentStatus) -> None:
         self._username = username
 
         if all(isinstance(comment, Comment) for comment in account_comments):
@@ -69,7 +69,7 @@ class User:
         comment_word = "comment" if count == 1 else "comments"
         
         if self._comments_status is not CommentStatus.UNKNOWN:
-            return f"{self._username} has {count} {comment_word} on their profile and has commenting {self._comments_status.value}."
+            return f"{self._username} has {count} {comment_word} on their profile and has comments {self._comments_status.value}."
         else:
             return f"{self._username} has {count} {comment_word} on their profile."
     

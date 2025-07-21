@@ -1,8 +1,9 @@
 from requests import get
+import sys
 from bs4 import BeautifulSoup
 from classes import Comment, User, CommentStatus
 
-def main():
+def main() -> int:
     #loading env file
     env_vars = {}
     with open(".env") as f:
@@ -33,7 +34,7 @@ def main():
             cookies_enabled = False
     
     if not cookies_enabled:
-        print("WARING: Without proper session it's impossible to get some data.")
+        print("WARNING: Without proper session it's impossible to get some data.")
 
     cookies = {
         'steamLoginSecure': env_vars["steamLoginSecure"],
@@ -50,7 +51,7 @@ def main():
 
         if response.status_code != 200:
             print(f"ERROR: Unable to get site, status code -> {response.status_code}")
-            break
+            return 1
         
         #parsing html
         soup = BeautifulSoup(response.content, "html.parser")
@@ -82,7 +83,11 @@ def main():
     user = User(soup.find("a", class_="persona_name_text_content").text.strip(), extracted_comments, comment_status)
 
     print(user)
-    #user.print_account_comments()
+    user.print_account_comments()
+    
+    return 0
 
 if __name__ == "__main__":
-    main()
+    result = main()
+    print("INFO: Program ran successfully" if result == 0 else "INFO: Program crashed")
+    sys.exit(result) 
