@@ -1,4 +1,4 @@
-from requests import get
+from requests import get, exceptions
 import sys
 from bs4 import BeautifulSoup
 from classes import Comment, User, CommentStatus
@@ -46,11 +46,17 @@ def main() -> int:
     extracted_comments = []
 
     while True:
-        #getting html
-        response = get(f"{steam_url}?ctp={page}", cookies=cookies)
-
-        if response.status_code != 200:
-            print(f"ERROR: Unable to get site, status code -> {response.status_code}")
+        try:
+            response = get(f"{steam_url}?ctp={page}", cookies=cookies)
+            response.raise_for_status()
+        except exceptions.HTTPError as e:
+            print(f"ERROR: HTTP error occurred -> {e}")
+            return 1
+        except exceptions.RequestException as e:
+            print(f"ERROR: Request failed -> {e}")
+            return 1
+        except Exception as e:
+            print(f"ERROR: Unexpected error occurred -> {e}")
             return 1
         
         #parsing html
