@@ -3,20 +3,35 @@ import sys
 from bs4 import BeautifulSoup
 from classes import Comment, User, CommentStatus
 
-def main() -> int:
-    #loading env file
+def load_env() -> dict:
     env_vars = {}
-    with open(".env") as f:
-        for line in f:
-            line = line.strip()
-            if not line or line.startswith("#") or "=" not in line:
-                continue
-            key, value = line.split("=", 1)
-            key = key.strip()
-            value = value.strip().strip('"').strip("'")
-            env_vars[key] = value
+    
+    try:
+        with open(".env") as f:
+            for line in f:
+                line = line.strip()
+                if not line or line.startswith("#") or "=" not in line:
+                    continue
+                key, value = line.split("=", 1)
+                key = key.strip()
+                value = value.strip().strip('"').strip("'")
+                env_vars[key] = value
+        return env_vars
+    except FileNotFoundError:
+        print("ERROR: .env file not found, program will run in restricted mode.")
+        return {}
+    except Exception as e:
+        print(f"ERROR: Failed to read .env file -> {e}")
+        return {}
 
-    MAX_PAGINATION_DEPTH = int(env_vars.get("MAX_PAGINATION_DEPTH", 100))
+def main() -> int:
+    env_vars = load_env()
+
+    try:
+        MAX_PAGINATION_DEPTH = int(env_vars.get("MAX_PAGINATION_DEPTH", 100))
+    except ValueError:
+        print("WARNING: MAX_PAGINATION_DEPTH is not a valid integer, defaulting to 100")
+        MAX_PAGINATION_DEPTH = 100
 
     #setting up steam url
     steam_url = env_vars["steam_url"] if "steam_url" in env_vars else input(
@@ -27,13 +42,15 @@ def main() -> int:
 
     #setting up cookies
     cookies_enabled = True
+    missing = []
     for key in ["steamLoginSecure", "sessionid"]:
         val = env_vars.get(key, "").strip()
         if not val:
-            print(f"WARNING: Missing or empty cookie key: {key}")
+            missing.append(key)
             cookies_enabled = False
     
     if not cookies_enabled:
+        print(f"WARNING: Missing or empty cookie keys: {', '.join(missing)}")
         print("WARNING: Without proper session it's impossible to get some data.")
 
     cookies = {
