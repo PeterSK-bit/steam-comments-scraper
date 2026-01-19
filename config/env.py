@@ -1,4 +1,4 @@
-from config_error import ConfigError
+from config.exceptions import ConfigError
 
 class EnvConfig:
     REQUIRED = ("steam_url",)
@@ -64,3 +64,16 @@ class EnvConfig:
     @property
     def max_pagination_depth(self) -> int:
         return self._vars.get("MAX_PAGINATION_DEPTH", 100)
+    
+    @property
+    def cookies_enabled(self) -> bool:
+        return self._cookies_enabled
+    
+    @property
+    def cookies(self) -> dict | None:
+        if not self._cookies_enabled:
+            return None
+        return {
+            'steamLoginSecure': self.steam_login_secure,
+            'sessionid': self.session_id
+        }
