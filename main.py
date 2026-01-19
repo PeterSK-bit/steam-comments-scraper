@@ -45,13 +45,16 @@ def main() -> int:
 
         env_config._normalize_vars()
 
+        if env_config.cookies_enabled == False:
+            logger.warning("Proceeding without cookies may lead to incomplete data or request failures.")
+
         comment_loader = CommentLoader(env_config)
         user: User = comment_loader.load_all()
         
         logger.info(user)
         for c in user.account_comments:
             logger.info(c)
-            
+
     except SteamRequestFailed as e:
         logger.error(f"Steam request failed: {e}")
         return 2
