@@ -1,5 +1,5 @@
-from comment import Comment
-from comment_status import CommentStatus
+from domain.comment import Comment
+from domain.comment_status import CommentStatus
 
 class User:
     def __init__(self, username:str, account_comments:list[Comment], comments_status: CommentStatus) -> None:

@@ -17,7 +17,7 @@ class CommentParser:
         return comments
     
     @staticmethod
-    def determine_comment_status(cookies_enabled: bool, html: bytes) -> CommentStatus:
+    def determine_comment_status(html: bytes, cookies_enabled: bool) -> CommentStatus:
         soup = BeautifulSoup(html, "html.parser")
         comment_entry = soup.find("div", class_="commentthread_entry_quotebox")
         
