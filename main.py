@@ -1,7 +1,9 @@
 from requests import get, exceptions
 import sys
 from bs4 import BeautifulSoup
-from classes import Comment, User, CommentStatus
+from domain.user import User
+from domain.comment_status import CommentStatus
+from domain.comment import Comment
 
 def load_env() -> dict:
     env_vars = {}
@@ -18,10 +20,10 @@ def load_env() -> dict:
                 env_vars[key] = value
         return env_vars
     except FileNotFoundError:
-        print("ERROR: .env file not found, program will run in restricted mode.")
+        print("WARNING: .env file not found, program will run in restricted mode.")
         return {}
     except Exception as e:
-        print(f"ERROR: Failed to read .env file -> {e}")
+        print(f"WARNING: Failed to read .env file, program will run in restricted mode.")
         return {}
 
 def main() -> int:
@@ -43,6 +45,7 @@ def main() -> int:
     #setting up cookies
     cookies_enabled = True
     missing = []
+
     for key in ["steamLoginSecure", "sessionid"]:
         val = env_vars.get(key, "").strip()
         if not val:
