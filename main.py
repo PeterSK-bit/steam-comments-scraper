@@ -4,10 +4,14 @@ import argparse
 from services.comment_loader import CommentLoader
 from domain.user import User
 from config.env import EnvConfig
+from cli.dry_run import DryRunManager
 
 from steam_client.exceptions import SteamRequestFailed
 from steam_client.exceptions import MaxPaginationDepthExceeded
 import config.exceptions as config_exceptions
+
+DRY_RUN_LEVEL = 25
+CONFIG_LEVEL = 15
 
 def parse_args():
     parser = argparse.ArgumentParser(description="Steam comment loader")
@@ -17,16 +21,31 @@ def parse_args():
     parser.add_argument("--user-url", type=str, required=False, help="Full URL to the user's Steam profile")
     parser.add_argument("--request-delay-ms", type=int, required=False, help="Delay between requests in milliseconds")
     parser.add_argument("--env-file", type=str, required=False, help="Path to the environment file")
-    parser.add_argument("--print-config", help="Print the current configuration and exit", action="store_true")
+    parser.add_argument("--print-config", action="store_true",help="Print the current configuration and exit")
+    parser.add_argument("--dry-run", action="store_true", help="Simulate actions without sending HTTP requests")
     return parser.parse_args()
+
+def dry_run(self, message, *args, **kws):
+    if self.isEnabledFor(DRY_RUN_LEVEL):
+        self._log(DRY_RUN_LEVEL, message, args, **kws)
+
+def config(self, message, *args, **kws):
+    if self.isEnabledFor(CONFIG_LEVEL):
+        self._log(CONFIG_LEVEL, message, args, **kws)
 
 def main() -> int:
     logging.basicConfig(
-        level=logging.INFO,
+        level=CONFIG_LEVEL,
         format="%(asctime)s [%(levelname)s] %(message)s",
         datefmt="%Y-%m-%d %H:%M:%S"
     )
-    logger = logging.getLogger(__name__)
+    logger: logging.Logger = logging.getLogger(__name__)
+
+    logging.addLevelName(DRY_RUN_LEVEL, "DRY-RUN")
+    logging.Logger.dry_run = dry_run
+
+    logging.addLevelName(CONFIG_LEVEL, "CONFIG")
+    logging.Logger.config = config
     
     args = parse_args()
 
@@ -49,24 +68,34 @@ def main() -> int:
             env_config.steam_url = args.user_url
         if args.request_delay_ms:
             env_config.request_delay_ms = args.request_delay_ms
+        if args.print_config:
+            env_config.print_config = True
+        if args.dry_run:
+            env_config.dry_run = True
 
         env_config._normalize_vars()
 
-        if args.print_config:
-            logger.info("Current Configuration:")
+        if env_config.print_config:
+            logger.config("Current Configuration:")
             for key, value in env_config.__dict__.items():
                 if key == "_vars":
                     for key, value in env_config._vars.items():
-                        logger.info(f"{key}: {value}")
+                        logger.config(f"{key}: {value}")
                 else:
-                    logger.info(f"{key}: {value}")
+                    logger.config(f"{key}: {value}")
             return 0
 
         if env_config.cookies_enabled == False:
             logger.warning("Proceeding without cookies may lead to incomplete data or request failures.")
 
-        comment_loader: CommentLoader = CommentLoader(env_config)
+        dry_run_manager: DryRunManager = DryRunManager(logger=logger, dry_run=args.dry_run)
+        comment_loader: CommentLoader = CommentLoader(env_config, dry_run_manager)
         user: User = comment_loader.load_all()
+
+        if dry_run_manager.is_dry_run:
+            logger.dry_run("Dry-run mode enabled: no requests were sent.")
+            logger.dry_run("Exiting.")
+            return 0
         
         logger.info(user)
         for c in user.account_comments:

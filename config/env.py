@@ -2,11 +2,14 @@ import config.exceptions as config
 
 class EnvConfig:
     REQUIRED = ("steam_url",)
-    OPTIONAL = ("steamLoginSecure", "sessionid", "MAX_PAGINATION_DEPTH", "request_delay_ms")
+    OPTIONAL = (
+        "steamLoginSecure", "sessionid", "MAX_PAGINATION_DEPTH", "request_delay_ms", "print_config", "dry_run"
+        )
 
     def __init__(self, path: str = "config/.env") -> None:
-        self._path = path
-        self._vars = { key: None for key in self.REQUIRED + self.OPTIONAL }
+        self._path: str = path
+        self._vars: dict = { key: None for key in self.REQUIRED + self.OPTIONAL }
+        self._cookies_enabled: bool = False
     
     def _load_env(self) -> None:
         if not self._path:
@@ -40,6 +43,8 @@ class EnvConfig:
         self._cookies_enabled = all(self._vars.get(k) for k in ("steamLoginSecure", "sessionid"))
         self._vars["MAX_PAGINATION_DEPTH"] = self._normalize_int("MAX_PAGINATION_DEPTH", 100)
         self._vars["request_delay_ms"] = self._normalize_int("request_delay_ms", 0)
+        self._vars["print_config"] = self._normalize_bool("print_config", False)
+        self._vars["dry_run"] = self._normalize_bool("dry_run", False)
 
     def _normalize_int(self, key: str, default: int) -> int:
         raw = self._vars.get(key, default)
@@ -50,6 +55,17 @@ class EnvConfig:
             value = default
 
         return value
+
+    def _normalize_bool(self, key: str, default: bool) -> bool:
+        raw = self._vars.get(key, default)
+
+        if isinstance(raw, bool):
+            return raw
+        
+        if isinstance(raw, str):
+            return raw.lower() in ("1", "true", "yes", "on")
+        
+        return default
 
     @property
     def steam_url(self) -> str:
@@ -108,6 +124,26 @@ class EnvConfig:
             raise config.ConfigError("request_delay_ms cannot be negative.")
         
         self._vars["request_delay_ms"] = value
+    
+    @property
+    def print_config(self) -> bool:
+        return self._vars.get("print_config", False)
+    
+    @print_config.setter
+    def print_config(self, value: bool) -> None:
+        if not isinstance(value, bool):
+            raise config.ConfigError("print_config must be a boolean.")
+        self._vars["print_config"] = value
+    
+    @property
+    def dry_run(self) -> bool:
+        return self._vars.get("dry_run", False)
+    
+    @dry_run.setter
+    def dry_run(self, value: bool) -> None:
+        if not isinstance(value, bool):
+            raise config.ConfigError("dry_run must be a boolean.")
+        self._vars["dry_run"] = value
 
     @property
     def cookies_enabled(self) -> bool:
