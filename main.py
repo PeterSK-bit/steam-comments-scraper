@@ -5,6 +5,7 @@ from services.comment_loader import CommentLoader
 from domain.user import User
 from config.env import EnvConfig
 from cli.dry_run import DryRunManager
+from cli.config_print_mode import ConfigPrintMode
 
 from steam_client.exceptions import SteamRequestFailed
 from steam_client.exceptions import MaxPaginationDepthExceeded
@@ -21,7 +22,9 @@ def parse_args():
     parser.add_argument("--user-url", type=str, required=False, help="Full URL to the user's Steam profile")
     parser.add_argument("--request-delay-ms", type=int, required=False, help="Delay between requests in milliseconds")
     parser.add_argument("--env-file", type=str, required=False, help="Path to the environment file")
-    parser.add_argument("--print-config", action="store_true",help="Print the current configuration and exit")
+    parser.add_argument("--print-config-mode", choices=[m.value for m in ConfigPrintMode], required=False,
+        help="Print resolved configuration and exit. Modes: safe (masked secrets), full (includes sensitive data), none."
+    )
     parser.add_argument("--dry-run", action="store_true", help="Simulate actions without sending HTTP requests")
     return parser.parse_args()
 
@@ -51,11 +54,14 @@ def main() -> int:
 
     try:
         env_config = EnvConfig(path=args.env_file) if args.env_file else EnvConfig()
-        env_config._load_env()
+        env_config.apply_env()
     except (config_exceptions.EnvFileNotFound, config_exceptions.EnvLoadError) as e:
         logger.warning(f"Environment loading error: {e} - if you are using CLI args, ignore this.")
     except config_exceptions.EnvFilePathNotProvided as e:
         logger.warning(f"{e} - if you are using CLI args, ignore this.")
+    except config_exceptions.ConfigError as e:
+        logger.error(f"Configuration error: {e}")
+        return 4
 
     try:
         if args.steam_login_secure:
@@ -68,31 +74,30 @@ def main() -> int:
             env_config.steam_url = args.user_url
         if args.request_delay_ms:
             env_config.request_delay_ms = args.request_delay_ms
-        if args.print_config:
-            env_config.print_config = True
+        if args.print_config_mode:
+            env_config.print_config_mode = ConfigPrintMode.parse(args.print_config_mode)
         if args.dry_run:
             env_config.dry_run = True
 
-        env_config._normalize_vars()
+        if env_config.print_config_mode != ConfigPrintMode.NONE:
+            if env_config.print_config_mode == ConfigPrintMode.FULL:
+                logger.warning("Printing sensitive configuration values. Do NOT share this output.")
 
-        if env_config.print_config:
-            logger.config("Current Configuration:")
-            for key, value in env_config.__dict__.items():
-                if key == "_vars":
-                    for key, value in env_config._vars.items():
-                        logger.config(f"{key}: {value}")
-                else:
-                    logger.config(f"{key}: {value}")
+            logger.config("Resolved configuration:")
+
+            for k, v in env_config.to_dict().items():
+                logger.config("%s = %s", k, v)
+
             return 0
 
         if env_config.cookies_enabled == False:
             logger.warning("Proceeding without cookies may lead to incomplete data or request failures.")
 
-        dry_run_manager: DryRunManager = DryRunManager(logger=logger, dry_run=args.dry_run)
+        dry_run_manager: DryRunManager = DryRunManager(logger=logger, dry_run=env_config.dry_run)
         comment_loader: CommentLoader = CommentLoader(env_config, dry_run_manager)
         user: User = comment_loader.load_all()
 
-        if dry_run_manager.is_dry_run:
+        if env_config.dry_run:
             logger.dry_run("Dry-run mode enabled: no requests were sent.")
             logger.dry_run("Exiting.")
             return 0
@@ -108,7 +113,7 @@ def main() -> int:
         logger.error(f"Pagination error: {e}")
         return 3
     except config_exceptions.ConfigError as e:
-        logger.error(f"Configuration error: {e} - set up env file correctly or use CLI args.")
+        logger.error(f"Configuration error: {e}")
         return 4
     except Exception as e:
         logger.exception("Program unexpectedly crashed")
