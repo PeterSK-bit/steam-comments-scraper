@@ -34,27 +34,27 @@ pip install -r requirements.txt
 Create a **.env** file in the `/config` of the project with the following structure:
 ```
 steam_url=https://steamcommunity.com/id/yourSteamID
-```
-
-Optional:
-```
 steamLoginSecure=YOUR_STEAM_LOGINSECURE_COOKIE
 sessionid=YOUR_SESSIONID_COOKIE
-MAX_PAGINATION_DEPTH=maximum_number_of_pages_the_program_will_run
-request_delay_ms=minimal_time_space_between_requests
-print_config=False
+MAX_PAGINATION_DEPTH=10
+request_delay_ms=0
+print_config_mode=none
+dry_run=False
 ```
 
 > To get the cookies, log in to Steam in your browser, open **Developer Tools (F12) > Application > Cookies**, and copy the values for __steamLoginSecure__ and __sessionid__.
 
 **Notes:**
-- Cookies are optional
-- Without cookies, the scraper runs in restricted mode
-- Missing `.env` file does not stop execution (a warning is logged)
+- Cookies are optional.
+- Without cookies, the scraper runs in restricted mode.
+- Missing `.env` file does not stop execution (a warning is logged).
 - Default `MAX_PAGINATION_DEPTH` is set at **100**.
-- Default `requrequest_delay_ms` is set to **0**.
-- `print_config` is debug tool for **ONLY** printing loaded env variables
-- Default value of `print_config` is **False** (standard for normal usage) 
+- Default `request_delay_ms` is set to **0**.
+- `print_config_mode` is a diagnostic option used to print the resolved configuration and exit.
+- `print_config_mode` modes: full, safe, none.
+- Default value of `print_config_mode` is **none** (standard for normal usage).
+- `dry_run` is a diagnostic option used to check algorithm correctness without fetching any data.
+- Default value of `dry_run` is **False** (standard for normal usage).
 
 ---
 
@@ -72,7 +72,8 @@ python main.py \
   --session-id <cookie> \
   --request-delay-ms 500 \
   --env-file config/.env \
-  --print-config # not recommended, this will only print env variables and ends the program
+  --print-config-mode safe \
+  --dry-run
 ```
 
 ### CLI arguments explaination
@@ -97,9 +98,13 @@ python main.py \
   - Path to a custom .env file.
   - If omitted, the default path **config/.env** is used.
   - CLI arguments always override values loaded from the env file.
-- `--print-config`
+- `--print-config-mode`
   - Used for debbuging.
   - Print the current configuration loaded and **exit**.
+  - **Modes:** SAFE (won't display cookies), FULL, NONE.
+- `--dry-run`
+  - Used for debugging.
+  - Simulates run of the program without actually doing any fetching
 
 **Note:** CLI arguments take precedence over environment variables.
 
@@ -120,9 +125,11 @@ YYYY-MM-DD HH:MM:SS [LEVEL] message
 ```
 
 **Levels:**
-- INFO – normal execution
-- WARNING – missing optional configuration (e.g. .env)
-- ERROR – fatal configuration or runtime issues
+- CONFIG_LEVEL - config info
+- INFO - normal execution
+- DRY_RUN_LEVEL - dry run info
+- WARNING - missing optional configuration (e.g. .env)
+- ERROR - fatal configuration or runtime issues
 
 ---
 
@@ -140,6 +147,9 @@ YYYY-MM-DD HH:MM:SS [LEVEL] message
 ```
 steam-comments-scraper/
 ├── main.py
+├── cli/
+│   ├── config_print_mode.py
+│   └── dry_run.py
 ├── config/
 │   ├── .env           # optional, not committed
 │   ├── env.py
@@ -182,13 +192,13 @@ Authentication cookies grant access equivalent to a logged-in Steam session.
 
 Cookies provided to this tool are used solely for making HTTP requests to Steam Community pages and are not stored, logged, or transmitted elsewhere.
 
-
 ---
 
 ## Future plans
-1. Add support for configurable logging levels.
-2. Improve logging message consistency.
-3. Implement asynch requests sending.
+1. Support for multiple output format options.
+2. Implement asynch requests sending.
+3. HTTP session reuse and retry policies.
+4. Basic test suite for config and parsers.
 
 ---
 
