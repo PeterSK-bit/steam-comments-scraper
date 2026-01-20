@@ -42,6 +42,7 @@ steamLoginSecure=YOUR_STEAM_LOGINSECURE_COOKIE
 sessionid=YOUR_SESSIONID_COOKIE
 MAX_PAGINATION_DEPTH=maximum_number_of_pages_the_program_will_run
 request_delay_ms=minimal_time_space_between_requests
+print_config=False
 ```
 
 > To get the cookies, log in to Steam in your browser, open **Developer Tools (F12) > Application > Cookies**, and copy the values for __steamLoginSecure__ and __sessionid__.
@@ -50,8 +51,10 @@ request_delay_ms=minimal_time_space_between_requests
 - Cookies are optional
 - Without cookies, the scraper runs in restricted mode
 - Missing `.env` file does not stop execution (a warning is logged)
-- Default MAX_PAGINATION_DEPTH is set at 100.
-- Default requrequest_delay_ms is set to 0.
+- Default `MAX_PAGINATION_DEPTH` is set at **100**.
+- Default `requrequest_delay_ms` is set to **0**.
+- `print_config` is debug tool for **ONLY** printing loaded env variables
+- Default value of `print_config` is **False** (standard for normal usage) 
 
 ---
 
@@ -68,7 +71,8 @@ python main.py \
   --steam-login-secure <cookie> \
   --session-id <cookie> \
   --request-delay-ms 500 \
-  --env-file config/.env
+  --env-file config/.env \
+  --print-config # not recommended, this will only print env variables and ends the program
 ```
 
 ### CLI arguments explaination
@@ -93,6 +97,9 @@ python main.py \
   - Path to a custom .env file.
   - If omitted, the default path **config/.env** is used.
   - CLI arguments always override values loaded from the env file.
+- `--print-config`
+  - Used for debbuging.
+  - Print the current configuration loaded and **exit**.
 
 **Note:** CLI arguments take precedence over environment variables.
 
