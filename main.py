@@ -10,11 +10,12 @@ from steam_client.exceptions import MaxPaginationDepthExceeded
 from config.exceptions import EnvFileNotFound, EnvLoadError, ConfigError
 
 def parse_args():
-    parser = argparse.ArgumentParser(description = "Steam comment loader")
-    parser.add_argument("--steam-login-secure", type = str, required = False)
-    parser.add_argument("--session-id", type = str, required = False)
-    parser.add_argument("--max-pages", type = int, required = False)
-    parser.add_argument("--user-url", type = str, required = False)
+    parser = argparse.ArgumentParser(description="Steam comment loader")
+    parser.add_argument("--steam-login-secure", type=str, required=False, help="Steam login secure cookie value")
+    parser.add_argument("--session-id", type=str, required=False, help="Steam session ID cookie value")
+    parser.add_argument("--max-pages", type=int, required=False, help="Maximum number of comment pages to load")
+    parser.add_argument("--user-url", type=str, required=False, help="Full URL to the user's Steam profile")
+    parser.add_argument("--request-delay-ms", type=int, required=False, help="Delay between requests in milliseconds")
     return parser.parse_args()
 
 def main() -> int:
@@ -42,6 +43,8 @@ def main() -> int:
             env_config.max_pagination_depth = args.max_pages
         if args.user_url:
             env_config.steam_url = args.user_url
+        if args.request_delay:
+            env_config.request_delay_ms = args.request_delay
 
         env_config._normalize_vars()
 

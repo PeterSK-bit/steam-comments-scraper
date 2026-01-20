@@ -2,7 +2,7 @@ from config.exceptions import ConfigError, EnvFileNotFound, EnvLoadError
 
 class EnvConfig:
     REQUIRED = ("steam_url",)
-    OPTIONAL = ("steamLoginSecure", "sessionid", "MAX_PAGINATION_DEPTH")
+    OPTIONAL = ("steamLoginSecure", "sessionid", "MAX_PAGINATION_DEPTH", "request_delay_ms")
 
     def __init__(self, path: str = "config/.env") -> None:
         self._path = path
@@ -35,16 +35,18 @@ class EnvConfig:
                 raise ConfigError(f"Missing required config: {key}")
 
         self._cookies_enabled = all(self._vars.get(k) for k in ("steamLoginSecure", "sessionid"))
+        self._vars["MAX_PAGINATION_DEPTH"] = self._normalize_int("MAX_PAGINATION_DEPTH", 100)
+        self._vars["request_delay_ms"] = self._normalize_int("request_delay_ms", 0)
 
-        raw = self._vars.get("MAX_PAGINATION_DEPTH", "100")
+    def _normalize_int(self, key: str, default: int) -> int:
+        raw = self._vars.get(key, default)
 
         try:
             value = int(raw)
         except (ValueError, TypeError):
-            value = 100
+            value = default
 
-        self._vars["MAX_PAGINATION_DEPTH"] = value
-
+        return value
 
     @property
     def steam_url(self) -> str:
@@ -89,6 +91,20 @@ class EnvConfig:
             raise ConfigError("MAX_PAGINATION_DEPTH must be a positive integer.")
         
         self._vars["MAX_PAGINATION_DEPTH"] = value
+    
+    @property
+    def request_delay_ms(self) -> int:
+        return self._vars.get("request_delay_ms", 0)
+    
+    @request_delay_ms.setter
+    def request_delay_ms(self, value: int) -> None:
+        if not isinstance(value, int):
+            raise ConfigError("request_delay_ms must be an integer.")
+        
+        if value < 0:
+            raise ConfigError("request_delay_ms cannot be negative.")
+        
+        self._vars["request_delay_ms"] = value
 
     @property
     def cookies_enabled(self) -> bool:
