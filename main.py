@@ -17,6 +17,7 @@ def parse_args():
     parser.add_argument("--user-url", type=str, required=False, help="Full URL to the user's Steam profile")
     parser.add_argument("--request-delay-ms", type=int, required=False, help="Delay between requests in milliseconds")
     parser.add_argument("--env-file", type=str, required=False, help="Path to the environment file")
+    parser.add_argument("--print-config", help="Print the current configuration and exit", action="store_true")
     return parser.parse_args()
 
 def main() -> int:
@@ -50,6 +51,16 @@ def main() -> int:
             env_config.request_delay_ms = args.request_delay_ms
 
         env_config._normalize_vars()
+
+        if args.print_config:
+            logger.info("Current Configuration:")
+            for key, value in env_config.__dict__.items():
+                if key == "_vars":
+                    for key, value in env_config._vars.items():
+                        logger.info(f"{key}: {value}")
+                else:
+                    logger.info(f"{key}: {value}")
+            return 0
 
         if env_config.cookies_enabled == False:
             logger.warning("Proceeding without cookies may lead to incomplete data or request failures.")
