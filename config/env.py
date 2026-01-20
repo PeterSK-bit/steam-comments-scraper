@@ -1,4 +1,4 @@
-from config.exceptions import ConfigError, EnvFileNotFound, EnvLoadError
+import config.exceptions as config
 
 class EnvConfig:
     REQUIRED = ("steam_url",)
@@ -6,9 +6,12 @@ class EnvConfig:
 
     def __init__(self, path: str = "config/.env") -> None:
         self._path = path
-        self._vars = {}
+        self._vars = { key: None for key in self.REQUIRED + self.OPTIONAL }
     
     def _load_env(self) -> None:
+        if not self._path:
+            raise config.EnvFilePathNotProvided("Environment file path not provided. Use CLI arg to specify env file path.")
+        
         env_vars = {}
 
         try:
@@ -25,14 +28,14 @@ class EnvConfig:
                     env_vars[key] = value
             self._vars = env_vars
         except FileNotFoundError as e:
-            raise EnvFileNotFound(f"Env file not found at path: {self._path}") from e
+            raise config.EnvFileNotFound(f"Env file not found at path: {self._path}") from e
         except Exception as e:
-            raise EnvLoadError(f"Failed to load env file: {self._path}") from e
+            raise config.EnvLoadError(f"Failed to load env file: {self._path}") from e
     
     def _normalize_vars(self) -> None:
         for key in self.REQUIRED:
             if not self._vars.get(key):
-                raise ConfigError(f"Missing required config: {key}")
+                raise config.ConfigError(f"Missing required config: {key}")
 
         self._cookies_enabled = all(self._vars.get(k) for k in ("steamLoginSecure", "sessionid"))
         self._vars["MAX_PAGINATION_DEPTH"] = self._normalize_int("MAX_PAGINATION_DEPTH", 100)
@@ -54,8 +57,8 @@ class EnvConfig:
 
     @steam_url.setter
     def steam_url(self, value: str) -> None:
-        if not value:
-            raise ConfigError("steam_url cannot be empty.")
+        if isinstance(value, str) or value == None:
+            raise config.ConfigError("steam_url must be a string or None.")
         self._vars["steam_url"] = value
     
     @property
@@ -64,8 +67,8 @@ class EnvConfig:
     
     @steam_login_secure.setter
     def steam_login_secure(self, value: str) -> None:
-        if not value:
-            raise ConfigError("steamLoginSecure cannot be empty.")
+        if isinstance(value, str) or value == None:
+            raise config.ConfigError("steamLoginSecure must be a string or None.")
         self._vars["steamLoginSecure"] = value
     
     @property
@@ -74,8 +77,8 @@ class EnvConfig:
     
     @session_id.setter
     def session_id(self, value: str) -> None:
-        if not value:
-            raise ConfigError("sessionid cannot be empty.")
+        if isinstance(value, str) or value == None:
+            raise config.ConfigError("sessionid must be a string or None.")
         self._vars["sessionid"] = value
     
     @property
@@ -88,7 +91,7 @@ class EnvConfig:
             raise ConfigError("MAX_PAGINATION_DEPTH must be an integer.")
         
         if value <= 0:
-            raise ConfigError("MAX_PAGINATION_DEPTH must be a positive integer.")
+            raise config.ConfigError("MAX_PAGINATION_DEPTH must be a positive integer.")
         
         self._vars["MAX_PAGINATION_DEPTH"] = value
     
@@ -102,7 +105,7 @@ class EnvConfig:
             raise ConfigError("request_delay_ms must be an integer.")
         
         if value < 0:
-            raise ConfigError("request_delay_ms cannot be negative.")
+            raise config.ConfigError("request_delay_ms cannot be negative.")
         
         self._vars["request_delay_ms"] = value
 

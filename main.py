@@ -7,7 +7,7 @@ from config.env import EnvConfig
 
 from steam_client.exceptions import SteamRequestFailed
 from steam_client.exceptions import MaxPaginationDepthExceeded
-from config.exceptions import EnvFileNotFound, EnvLoadError, ConfigError
+import config.exceptions as config_exceptions
 
 def parse_args():
     parser = argparse.ArgumentParser(description="Steam comment loader")
@@ -16,6 +16,7 @@ def parse_args():
     parser.add_argument("--max-pages", type=int, required=False, help="Maximum number of comment pages to load")
     parser.add_argument("--user-url", type=str, required=False, help="Full URL to the user's Steam profile")
     parser.add_argument("--request-delay-ms", type=int, required=False, help="Delay between requests in milliseconds")
+    parser.add_argument("--env-file", type=str, required=False, help="Path to the environment file")
     return parser.parse_args()
 
 def main() -> int:
@@ -29,10 +30,12 @@ def main() -> int:
     args = parse_args()
 
     try:
-        env_config = EnvConfig()
+        env_config = EnvConfig(path=args.env_file) if args.env_file else EnvConfig()
         env_config._load_env()
-    except (EnvFileNotFound, EnvLoadError) as e:
+    except (config_exceptions.EnvFileNotFound, config_exceptions.EnvLoadError) as e:
         logger.warning(f"Environment loading error: {e} - if you are using CLI args, ignore this.")
+    except config_exceptions.EnvFilePathNotProvided as e:
+        logger.warning(f"{e} - if you are using CLI args, ignore this.")
 
     try:
         if args.steam_login_secure:
@@ -43,15 +46,15 @@ def main() -> int:
             env_config.max_pagination_depth = args.max_pages
         if args.user_url:
             env_config.steam_url = args.user_url
-        if args.request_delay:
-            env_config.request_delay_ms = args.request_delay
+        if args.request_delay_ms:
+            env_config.request_delay_ms = args.request_delay_ms
 
         env_config._normalize_vars()
 
         if env_config.cookies_enabled == False:
             logger.warning("Proceeding without cookies may lead to incomplete data or request failures.")
 
-        comment_loader = CommentLoader(env_config)
+        comment_loader: CommentLoader = CommentLoader(env_config)
         user: User = comment_loader.load_all()
         
         logger.info(user)
@@ -64,7 +67,7 @@ def main() -> int:
     except MaxPaginationDepthExceeded as e:
         logger.error(f"Pagination error: {e}")
         return 3
-    except ConfigError as e:
+    except config_exceptions.ConfigError as e:
         logger.error(f"Configuration error: {e} - set up env file correctly or use CLI args.")
         return 4
     except Exception as e:

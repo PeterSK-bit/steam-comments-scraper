@@ -6,3 +6,6 @@ class EnvFileNotFound(ConfigError):
 
 class EnvLoadError(ConfigError):
     pass
+
+class EnvFilePathNotProvided(ConfigError):
+    pass
