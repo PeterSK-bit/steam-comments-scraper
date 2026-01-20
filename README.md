@@ -48,8 +48,11 @@ sessionid=YOUR_SESSIONID_COOKIE #optional
 Optional:
 ```
 MAX_PAGINATION_DEPTH=maximum_number_of_pages_the_program_will_run
+request_delay_ms=minimal_time_space_between_requests
 ```
-**Note:** default is set at 100
+**Notes:**
+- Default MAX_PAGINATION_DEPTH is set at 100.
+- Default requrequest_delay_ms is set to 0.
 
 ---
 
@@ -64,7 +67,8 @@ python main.py \
   --user-url https://steamcommunity.com/id/yourSteamID \
   --max-pages 50 \
   --steam-login-secure <cookie> \
-  --session-id <cookie>
+  --session-id <cookie> \
+  --request-delay-ms 500
 ```
 
 The script will:
@@ -137,8 +141,8 @@ steam-comments-scraper/
 ## Future plans
 1. Add support for configurable logging levels.
 2. Improve logging message consistency.
-3. Add configurable delay between requests.
-4. Implement dynamic `.env` file discovery.
+3. Implement dynamic `.env` file discovery.
+4. Implement asynch requests sending.
 
 ---
 
