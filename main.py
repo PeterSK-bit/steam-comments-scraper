@@ -89,6 +89,9 @@ def main() -> int:
                 logger.config("%s = %s", k, v)
 
             return 0
+        else:
+            logger.config("Configuration loaded successfully.")
+            logger.info("Starting comment loading process.")
 
         if env_config.cookies_enabled == False:
             logger.warning("Proceeding without cookies may lead to incomplete data or request failures.")

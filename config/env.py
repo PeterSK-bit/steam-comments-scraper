@@ -1,3 +1,5 @@
+from dotenv import dotenv_values
+
 from cli.config_print_mode import ConfigPrintMode
 
 import config.exceptions as config
@@ -39,7 +41,6 @@ class EnvConfig:
         
         self._normalize_vars()
 
-
     def _load_env(self) -> dict[str, str]:
         if not self._path:
             raise config.EnvFilePathNotProvided("Environment file path not provided. Use CLI arg to specify env file path.")
@@ -47,20 +48,18 @@ class EnvConfig:
         env: dict[str, str] = {}
 
         try:
-            with open(self._path) as f:
-                for line in f:
-                    line = line.strip()
+            env = dotenv_values(self._path)
 
-                    if not line or line.startswith("#") or "=" not in line:
-                        continue
+            env = {k: v for k, v in env.items() if v is not None}
 
-                    key, value = line.split("=", 1)
-                    key = key.strip()
+            allowed = set(self.REQUIRED + self.OPTIONAL)
+            unknown = set(env) - allowed
+            if unknown:
+                raise config.EnvLoadError(f"Unknown env keys: {', '.join(unknown)}")
 
-                    if key not in self.REQUIRED + self.OPTIONAL:
-                        continue
-
-                    env[key] = value.strip().strip('"').strip("'")
+            missing = set(self.REQUIRED) - set(env)
+            if missing:
+                raise config.EnvLoadError(f"Missing required env keys: {', '.join(missing)}")
 
             return env
         except FileNotFoundError as e:
