@@ -2,7 +2,7 @@ import sys
 import logging
 import argparse
 from services.comment_loader import CommentLoader
-from domain.user import User
+from domain.scrape_result import ScrapeResult
 from config.env import EnvConfig
 from cli.dry_run import DryRunManager
 from cli.config_print_mode import ConfigPrintMode
@@ -104,16 +104,15 @@ def main() -> int:
 
         dry_run_manager: DryRunManager = DryRunManager(logger=logger, dry_run=env_config.dry_run)
         comment_loader: CommentLoader = CommentLoader(env_config, dry_run_manager)
-        user: User = comment_loader.load_all()
+        scrape_result: ScrapeResult = comment_loader.load_all()
 
         if env_config.dry_run:
             logger.dry_run("Dry-run mode enabled: no requests were sent.")
             logger.dry_run("Exiting.")
             return 0
         
-        logger.info(user)
-        for c in user.account_comments:
-            logger.info(c)
+        logger.info(f"Comments loaded successfully for profile '{scrape_result.profile_name}' ({scrape_result.profile_url}).")
+        logger.info(f"Total comments loaded: {len(scrape_result.account_comments)}")
 
     except SteamRequestFailed as e:
         logger.error(f"Steam request failed: {e}")

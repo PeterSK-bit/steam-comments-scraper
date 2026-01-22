@@ -1,5 +1,5 @@
 from domain.comment import Comment
-from domain.user import User
+from domain.scrape_result import ScrapeResult
 from domain.comment_status import CommentStatus
 from config.env import EnvConfig
 from parsing.comments import CommentParser
@@ -13,7 +13,7 @@ class CommentLoader:
         self._steam_client: SteamClient = SteamClient(env, dry_run_manager)
         self._dry_run_manager: DryRunManager = dry_run_manager
 
-    def load_all(self) -> User:
+    def load_all(self) -> ScrapeResult:
         extracted_comments: list[Comment] = []
 
         for page in range(1, self._env.max_pagination_depth + 1):
@@ -34,5 +34,6 @@ class CommentLoader:
             comment_status:CommentStatus = CommentParser.determine_comment_status(page_content, self._env.cookies_enabled)
             page_content: bytes = self._steam_client.fetch_comments_page(1)
             user_name: str = UserParser.parse_user(page_content)
+            user_url: str = self._env.steam_url
 
-        return User(user_name, extracted_comments, comment_status)
+        return ScrapeResult(user_name, user_url, extracted_comments, comment_status)
