@@ -74,6 +74,7 @@ python main.py \
   --env-file config/.env \
   --print-config-mode safe \
   --dry-run
+  --no-dry-run
 ```
 
 ### CLI arguments explaination
@@ -105,6 +106,9 @@ python main.py \
 - `--dry-run`
   - Used for debugging.
   - Simulates run of the program without actually doing any fetching
+- `--no-dry-run`
+  - Explicitly disables dry-run mode, if its enabled in config
+  - Causes argument conflict if paired with **--dry-run**
 
 **Note:** CLI arguments take precedence over environment variables.
 
