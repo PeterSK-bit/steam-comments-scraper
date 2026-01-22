@@ -26,6 +26,7 @@ def parse_args():
         help="Print resolved configuration and exit. Modes: safe (masked secrets), full (includes sensitive data), none."
     )
     parser.add_argument("--dry-run", action="store_true", help="Simulate actions without sending HTTP requests")
+    parser.add_argument("--no-dry-run", action="store_true", help="Explicitly disables dry-run mode, if its enabled in config")
     return parser.parse_args()
 
 def dry_run(self, message, *args, **kws):
@@ -76,6 +77,11 @@ def main() -> int:
             env_config.request_delay_ms = args.request_delay_ms
         if args.print_config_mode:
             env_config.print_config_mode = ConfigPrintMode.parse(args.print_config_mode)
+        if args.dry_run and args.no_dry_run:
+            logger.error("Conflicting arguments: --dry-run and --no-dry-run cannot be used together.")
+            return 4
+        if args.no_dry_run:
+            env_config.dry_run = False
         if args.dry_run:
             env_config.dry_run = True
 
