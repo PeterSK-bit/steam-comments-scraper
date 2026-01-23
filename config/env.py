@@ -1,6 +1,7 @@
 from dotenv import dotenv_values
 
 from cli.config_print_mode import ConfigPrintMode
+from output.output_format import OutputFormat
 
 import config.exceptions as config
 
@@ -113,7 +114,7 @@ class EnvConfig:
         self._user_config["request_delay_ms"] = self._normalize_int("request_delay_ms", 0)
         self._user_config["print_config_mode"] = self._normalize_print_mode("print_config_mode", ConfigPrintMode.NONE)
         self._user_config["dry_run"] = self._normalize_bool("dry_run", False)
-        self._user_config["output_format"] = self._user_config.get("output_format", "json")
+        self._user_config["output_format"] = self._normalize_output_format("output_format", OutputFormat.JSON)
         self._user_config["output_file"] = self._normalize_str("output_file", None)
 
     def _normalize_str(self, key: str, default: str | None) -> str | None:
@@ -165,6 +166,14 @@ class EnvConfig:
             except ValueError:
                 return default
         
+        return default
+
+    def _normalize_output_format(self, key: str, default: OutputFormat) -> OutputFormat:
+        raw = self._user_config.get(key, default)
+
+        if isinstance(raw, str) and raw.lower() in ("json", "csv", "xml", "text"):
+            return OutputFormat(raw.lower())
+    
         return default
 
     @property
@@ -248,15 +257,15 @@ class EnvConfig:
         self._user_config["dry_run"] = value
 
     @property
-    def output_format(self) -> str:
-        return self._user_config.get("output_format", "json")
+    def output_format(self) -> OutputFormat:
+        return self._user_config.get("output_format", OutputFormat.JSON)
     
     @output_format.setter
-    def output_format(self, value: str) -> None:
-        if not isinstance(value, str) or value.lower() not in ("json", "csv", "xml", "text"):
-            raise config.ConfigError("output_format must be one of: json, csv, xml, text.")
-        self._user_config["output_format"] = value.lower()
-    
+    def output_format(self, value: OutputFormat) -> None:
+        if not isinstance(value, OutputFormat):
+            raise config.ConfigError("output_format must be an instance of OutputFormat enum.")
+        self._user_config["output_format"] = value
+
     @property
     def output_file(self) -> str | None:
         return self._user_config.get("output_file", None)

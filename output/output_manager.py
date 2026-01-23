@@ -1,49 +1,35 @@
 from domain.scrape_result import ScrapeResult
+from output.output_format import OutputFormat
 import output.serializers as serializers
 
 class OutputManager:
-    def __init__(self, format: str = "json", file_path: str | None = None):
+    _serializers = {
+        OutputFormat.JSON: serializers.JSONSerializer,
+        OutputFormat.CSV: serializers.CSVSerializer,
+        OutputFormat.XML: serializers.XMLSerializer,
+        OutputFormat.TEXT: serializers.TextSerializer,
+    }
+
+    def __init__(self, format: OutputFormat = OutputFormat.JSON, file_path: str | None = None):
         self.format = format
         self.file_path = file_path
-    
+
     def output_data(self, data: ScrapeResult) -> None:
-        match self.format:
-            case "json":
-                json_data = serializers.JSONSerializer.serialize(data)
+        serializer = self._serializers[self.format]
 
-                if self.file_path:
-                    with open(self.file_path, "w", encoding="utf-8") as f:
-                        f.write(json_data)
-                else:
-                    print(json_data)
+        try:
+            serialized = serializer.serialize(data)
+        except Exception as e:
+            raise RuntimeError(f"Serialization failed for format '{self.format}'") from e
 
-            case "csv":
-                csv_data = serializers.CSVSerializer.serialize(data)
+        if self.file_path:
+            self._write_to_file(serialized)
+        else:
+            print(serialized)
 
-                if self.file_path:
-                    with open(self.file_path, "w", encoding="utf-8") as f:
-                        f.write(csv_data)
-                else:
-                    print(csv_data)
-
-            case "xml":
-                xml_data = serializers.XMLSerializer.serialize(data)
-
-                if self.file_path:
-                    with open(self.file_path, "w", encoding="utf-8") as f:
-                        f.write(xml_data)
-                else:
-                    print(xml_data)
-
-            case "text":
-                text_data = serializers.TextSerializer.serialize(data)
-
-                if self.file_path:
-                    with open(self.file_path, "w", encoding="utf-8") as f:
-                        f.write(text_data)
-                else:
-                    print(text_data)
-
-            case _:
-                #TODO custom exception
-                raise ValueError(f"Unsupported output format: {self.format}")
+    def _write_to_file(self, content: str) -> None:
+        try:
+            with open(self.file_path, "w", encoding="utf-8") as f:
+                f.write(content)
+        except OSError as e:
+            raise IOError(f"Failed to write output to '{self.file_path}'") from e

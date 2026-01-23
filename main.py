@@ -2,6 +2,7 @@ import sys
 import logging
 import argparse
 
+from output.output_format import OutputFormat
 from services.comment_loader import CommentLoader
 from domain.scrape_result import ScrapeResult
 from config.env import EnvConfig
@@ -84,7 +85,7 @@ def extract_args(args, env_config: EnvConfig) -> None:
     if args.dry_run:
         env_config.dry_run = True
     if args.output_format:
-        env_config.output_format = args.output_format
+        env_config.output_format = OutputFormat.parse(args.output_format)
     if args.output_file:
         env_config.output_file = args.output_file
 
@@ -156,7 +157,7 @@ def main() -> int:
         logger.error(f"CLI argument error: {e}")
         return 5
     except Exception as e:
-        logger.exception("Program unexpectedly crashed")
+        logger.error("Program unexpectedly crashed")
         return 1
     
     logger.info("Program ran successfully")

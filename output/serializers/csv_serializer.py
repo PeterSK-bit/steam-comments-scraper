@@ -21,7 +21,7 @@ class CSVSerializer(OutputSerializer):
         ]
         
         output = io.StringIO()
-        writer = csv.DictWriter(output, fieldnames=fieldnames)
+        writer = csv.DictWriter(output, fieldnames=fieldnames, lineterminator='\n')
         writer.writeheader()
         
         for comment in data.account_comments:
