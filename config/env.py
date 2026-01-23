@@ -7,7 +7,9 @@ import config.exceptions as config
 class EnvConfig:
     REQUIRED = ("steam_url",)
     OPTIONAL = (
-        "steamLoginSecure", "sessionid", "MAX_PAGINATION_DEPTH", "request_delay_ms", "print_config_mode", "dry_run"
+        "steamLoginSecure", "sessionid", "MAX_PAGINATION_DEPTH", 
+        "request_delay_ms", "print_config_mode", "dry_run",
+        "output_format", "output_file"
         )
     SENSITIVE_KEYS = ("steamLoginSecure", "sessionid")
 
@@ -88,7 +90,15 @@ class EnvConfig:
                 self.print_config_mode = ConfigPrintMode.parse(raw)
 
             case "dry_run":
-                self.dry_run = raw.lower() in ("1", "true", "yes")
+                self.dry_run = raw.lower() in ("1", "true", "yes", "on")
+
+            case "output_format":
+                if raw.lower() not in ("json", "csv", "xml", "text"):
+                    raise config.ConfigError(f"Invalid output_format: {raw}. Must be one of json, csv, xml, text.")
+                self._user_config["output_format"] = raw.lower()
+
+            case "output_file":
+                self._user_config["output_file"] = raw
 
             case _:
                 pass
@@ -103,6 +113,24 @@ class EnvConfig:
         self._user_config["request_delay_ms"] = self._normalize_int("request_delay_ms", 0)
         self._user_config["print_config_mode"] = self._normalize_print_mode("print_config_mode", ConfigPrintMode.NONE)
         self._user_config["dry_run"] = self._normalize_bool("dry_run", False)
+        self._user_config["output_format"] = self._user_config.get("output_format", "json")
+        self._user_config["output_file"] = self._normalize_str("output_file", None)
+
+    def _normalize_str(self, key: str, default: str | None) -> str | None:
+        raw = self._user_config.get(key, default)
+
+        if raw is None:
+            return None
+
+        if not isinstance(raw, str):
+            raise TypeError(f"{key} must be a string or None")
+
+        value = raw.strip()
+
+        if value.lower() in {"none", "null", ""}:
+            return None
+
+        return value
 
     def _normalize_int(self, key: str, default: int) -> int:
         raw = self._user_config.get(key, default)
@@ -218,6 +246,26 @@ class EnvConfig:
         if not isinstance(value, bool):
             raise config.ConfigError("dry_run must be a boolean.")
         self._user_config["dry_run"] = value
+
+    @property
+    def output_format(self) -> str:
+        return self._user_config.get("output_format", "json")
+    
+    @output_format.setter
+    def output_format(self, value: str) -> None:
+        if not isinstance(value, str) or value.lower() not in ("json", "csv", "xml", "text"):
+            raise config.ConfigError("output_format must be one of: json, csv, xml, text.")
+        self._user_config["output_format"] = value.lower()
+    
+    @property
+    def output_file(self) -> str | None:
+        return self._user_config.get("output_file", None)
+    
+    @output_file.setter
+    def output_file(self, value: str | None) -> None:
+        if not (isinstance(value, str) or value is not None):
+            raise config.ConfigError("output_file must be a string or None.")
+        self._user_config["output_file"] = value
 
     @property
     def cookies_enabled(self) -> bool:
