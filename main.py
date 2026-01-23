@@ -30,7 +30,7 @@ def parse_args():
     parser.add_argument("--dry-run", action="store_true", help="Simulate actions without sending HTTP requests")
     parser.add_argument("--no-dry-run", action="store_true", help="Explicitly disables dry-run mode, if its enabled in config")
     parser.add_argument(
-        "--output-format", choices=["json", "csv", "xml", "text"], default="json", 
+        "--output-format", choices=["json", "csv", "xml", "text"], 
         required=False, help="Output format for scraped comments"
         )
     parser.add_argument(
