@@ -9,4 +9,4 @@ class JSONSerializer(OutputSerializer):
     
     @staticmethod
     def serialize(data: ScrapeResult) -> str:
-        return json.dumps(asdict(data), default=lambda o: o.value if isinstance(o, Enum) else str(o), indent=4)
+        return json.dumps(asdict(data), default=lambda o: o.value if isinstance(o, Enum) else str(o), indent=4, ensure_ascii=False)
