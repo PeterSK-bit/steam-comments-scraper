@@ -40,6 +40,8 @@ MAX_PAGINATION_DEPTH=10
 request_delay_ms=0
 print_config_mode=none
 dry_run=False
+output_format=json
+output_file=data.json
 ```
 
 > To get the cookies, log in to Steam in your browser, open **Developer Tools (F12) > Application > Cookies**, and copy the values for __steamLoginSecure__ and __sessionid__.
@@ -51,10 +53,13 @@ dry_run=False
 - Default `MAX_PAGINATION_DEPTH` is set at **100**.
 - Default `request_delay_ms` is set to **0**.
 - `print_config_mode` is a diagnostic option used to print the resolved configuration and exit.
-- `print_config_mode` modes: full, safe, none.
-- Default value of `print_config_mode` is **none** (standard for normal usage).
+  - `print_config_mode` modes: full, safe, none.
+  - Default value of `print_config_mode` is **none** (standard for normal usage).
 - `dry_run` is a diagnostic option used to check algorithm correctness without fetching any data.
-- Default value of `dry_run` is **False** (standard for normal usage).
+  - Default value of `dry_run` is **False** (standard for normal usage).
+- `output_format` choices: json, xml, csv and text
+- `output_file` default: None
+  - If not spetified, output would be printed to console
 
 ---
 
@@ -73,8 +78,10 @@ python main.py \
   --request-delay-ms 500 \
   --env-file config/.env \
   --print-config-mode safe \
-  --dry-run
-  --no-dry-run
+  --dry-run \
+  --no-dry-run \
+  --output-format json \
+  --output-file data.json
 ```
 
 ### CLI arguments explaination
@@ -109,6 +116,12 @@ python main.py \
 - `--no-dry-run`
   - Explicitly disables dry-run mode, if its enabled in config
   - Causes argument conflict if paired with **--dry-run**
+- `--output-format`
+  - Choices: json, csv, xml and text
+  - Default: json
+- `--output-file`
+  - Default: None
+  - If not spetified, output would be printed to console
 
 **Note:** CLI arguments take precedence over environment variables.
 
@@ -144,6 +157,7 @@ YYYY-MM-DD HH:MM:SS [LEVEL] message
 - `2` – Steam request failed
 - `3` – Pagination limit exceeded
 - `4` – Configuration error
+- `5` – CLI arguments conflict
 
 ---
 
@@ -153,15 +167,25 @@ steam-comments-scraper/
 ├── main.py
 ├── cli/
 │   ├── config_print_mode.py
+|   ├── exceptions.py
 │   └── dry_run.py
 ├── config/
 │   ├── .env           # optional, not committed
 │   ├── env.py
 │   └── exceptions.py
 ├── domain/
-│   ├── user.py
+│   ├── scrape_result.py
 │   ├── comment.py
 │   └── comment_status.py
+├── output/
+|   ├── serializers/
+|   |   ├── base.py
+|   |   ├── csv_serializer.py
+|   |   ├── json_serializer.py
+|   |   ├── text_serializer.py
+|   |   └── xml_serializer.py
+|   ├── output_format.py
+|   └── output_manager.py
 ├── parsing/
 │   ├── comments.py
 │   └── user.py
@@ -199,10 +223,9 @@ Cookies provided to this tool are used solely for making HTTP requests to Steam 
 ---
 
 ## Future plans
-1. Support for multiple output format options.
-2. Implement asynch requests sending.
-3. HTTP session reuse and retry policies.
-4. Basic test suite for config and parsers.
+1. Implement asynch requests sending.
+2. HTTP session reuse and retry policies.
+3. Basic test suite for config and parsers.
 
 ---
 
