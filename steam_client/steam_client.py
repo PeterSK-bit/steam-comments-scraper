@@ -10,7 +10,9 @@ class SteamClient:
     def __init__(self, env: EnvConfig, dry_run_manager: DryRunManager) -> None:
         self._env = env
         self._rate_limiter = RateLimiter(self._env.request_delay_ms)
-        if not self._env.steam_url.endswith("/allcomments"): self._env.steam_url += "/allcomments"
+        base_url = self._env.steam_url.rstrip("/")
+        if not base_url.endswith("/allcomments"):
+            self._env.steam_url = f"{base_url}/allcomments"
         self._dry_run_manager: DryRunManager = dry_run_manager
     
     def fetch_comments_page(self, page: int) -> bytes:
